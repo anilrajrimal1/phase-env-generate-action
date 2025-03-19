@@ -1,0 +1,29 @@
+name: "Fetch Phase Secrets"
+description: "Fetch secrets from Phase and write to .env file"
+author: "Anil Raj Rimal"
+inputs:
+  phase_access_token:
+    description: "Phase Access Token"
+    required: true
+outputs:
+  env_file:
+    description: "Path to the generated .env file"
+    value: ".env"
+runs:
+  using: "composite"
+  steps:
+    - name: Install Phase CLI
+      shell: bash
+      run: curl -fsSL https://cli.phase.dev/install.sh | sh
+
+    - name: Authenticate Phase CLI
+      shell: bash
+      run: phase auth login --token ${{ inputs.phase_access_token }}
+
+    - name: Fetch Secrets and Create .env File
+      shell: bash
+      run: bash $GITHUB_ACTION_PATH/entrypoint.sh
+
+branding:
+    icon: "eye-off"
+    color: "black" 
