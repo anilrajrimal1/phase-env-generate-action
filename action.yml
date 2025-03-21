@@ -1,29 +1,62 @@
 name: "Fetch Phase Secrets"
-description: "Fetch secrets from Phase and write to .env file"
+description: "Fetch secrets from Phase and write them to an .env file"
 author: "Anil Raj Rimal"
+
 inputs:
   phase_access_token:
-    description: "Phase Access Token"
+    description: "Phase Access Token used to authenticate with the Phase CLI"
     required: true
+  phase_app_id:
+    description: "Phase Application ID identifying the application to fetch secrets from"
+    required: true
+  phase_env:
+    description: "Phase Environment Name (e.g., develop, staging, master)"
+    required: true
+  phase_host:
+    description: "Phase Host URL (optional, only for self-hosted Phase instances)"
+    required: false
+  output_file:
+    description: "Path to the output .env file"
+    required: false
+    default: ".env"
+  secrets_to_fetch:
+    description: "Space-separated list of specific secrets to fetch (optional; fetches all if not specified)"
+    required: false
+
 outputs:
   env_file:
     description: "Path to the generated .env file"
-    value: ".env"
+    value: ${{ steps.fetch.outputs.env_file }}
+
 runs:
   using: "composite"
   steps:
+    - name: Set PHASE_HOST if provided
+      shell: bash
+      if: inputs.phase_host != ''
+      run: echo "PHASE_HOST=${{ inputs.phase_host }}" >> $GITHUB_ENV
+
     - name: Install Phase CLI
       shell: bash
-      run: curl -fsSL https://cli.phase.dev/install.sh | sh
+      run: |
+        echo "Installing Phase CLI..."
+        curl -fsSL https://pkg.phase.dev/install.sh | sudo bash
 
     - name: Authenticate Phase CLI
       shell: bash
-      run: phase auth login --token ${{ inputs.phase_access_token }}
+      run: |
+        echo "Authenticating with Phase..."
+        phase auth login --token ${{ inputs.phase_access_token }}
 
-    - name: Fetch Secrets and Create .env File
+    - name: Fetch Secrets and Write to .env File
       shell: bash
-      run: bash $GITHUB_ACTION_PATH/entrypoint.sh
+      id: fetch
+      run: |
+        echo "Fetching secrets from Phase for app: ${{ inputs.phase_app_id }}, environment: ${{ inputs.phase_env }}..."
+        phase secrets export --app "${{ inputs.phase_app_id }}" --env "${{ inputs.phase_env }}" --format=dotenv ${{ inputs.secrets_to_fetch }} > "${{ inputs.output_file }}"
+        echo "Secrets written to ${{ inputs.output_file }} successfully."
+        echo "env_file=${{ inputs.output_file }}" >> $GITHUB_OUTPUT
 
 branding:
-    icon: "eye-off"
-    color: "black" 
+  icon: "eye-off"
+  color: "black"
