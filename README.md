@@ -1,27 +1,27 @@
-# 🔐 Phase Environment Generate Action
+# 🔐 Phase Secrets Fetch Action
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/anilrajrimal1/phase-env-generate-action)](https://github.com/anilrajrimal1/phase-env-generate-action/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/anilrajrimal1/phase-secrets-fetch-action)](https://github.com/anilrajrimal1/phase-secrets-fetch-action/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A GitHub Action that fetches secrets from [Phase](https://phase.dev) and generates a `.env` file for your projects.
+A GitHub Action that securely fetches secrets from [Phase](https://phase.dev) and generates a `.env` file for use in your workflows.
 
 ## Overview
 
-This action automates the process of retrieving secrets from Phase and creating a `.env` file, making it easy to incorporate secure environment variables into your GitHub Actions workflow.
+This action automates retrieving secrets from Phase and writing them to a `.env` file, making it easy to integrate secure environment variables into your GitHub Actions workflows.
 
 ## Features
 
-- 🔒 Securely authenticates with Phase using your access token
-- 📥 Fetches secrets from your Phase environment
-- 📝 Generates a `.env` file with your secrets
-- 🔄 Simple integration with existing workflows
+- 🔒 Secure authentication using a Phase Service Token
+- 📥 Fetches secrets for a specified Phase environment
+- 📝 Writes secrets to a `.env` file for seamless use in subsequent steps
+- ⚡ Simple setup and integration with GitHub Actions
 
 ## Usage
 
 ### Prerequisites
 
-- A [Phase](https://phase.dev) account with secrets configured
-- A Phase access token with appropriate permissions
+- A [Phase](https://phase.dev) account with configured secrets or your own Self-Hosted one.
+- A Phase Service Token with appropriate permissions
 
 ### Basic Example
 
@@ -30,7 +30,7 @@ name: Deploy with Phase Secrets
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   deploy:
@@ -39,9 +39,11 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Fetch Phase Secrets and generate .env
-        uses: anilrajrimal1/phase-env-generate-action@v1.0.0
+        uses: anilrajrimal1/phase-secrets-fetch-action@v1.0.2
         with:
-          phase_access_token: ${{ secrets.PHASE_ACCESS_TOKEN }}
+          phase_service_token: ${{ secrets.PHASE_SERVICE_TOKEN }}
+          phase_app_name: "your-phase-app-name"
+          phase_env: "your-env"
       
       # Your .env file is now available for other steps
       - name: Run your application
@@ -51,28 +53,33 @@ jobs:
 
 ### Inputs
 
-| Input                | Description                | Required |
-|----------------------|----------------------------|----------|
-| `phase_access_token` | Your Phase API access token| ✅ Yes   |
+| Input                | Description                                         | Required |
+|----------------------|-----------------------------------------------------|----------|
+| `phase_service_token` | Your Phase Service Token                           | ✅ Yes   |
+| `phase_app_name`     | The name of your Phase application                  | ✅ Yes   |
+| `phase_env`         | The environment (e.g., develop, staging, production) | ✅ Yes   |
+| `phase_host`        | Phase host URL (only for self-hosted instances)      | ❌ No    |
+| `output_file`       | Path to save the `.env` file (default: `.env`)       | ❌ No    |
+| `secrets_to_fetch`  | Space-separated list of specific secrets to fetch    | ❌ No    |
 
 ### Outputs
 
-| Output     | Description                    | Value  |
-|------------|--------------------------------|--------|
-| `env_file` | Path to the generated .env file| `.env` |
+| Output     | Description                     | Value  |
+|------------|---------------------------------|--------|
+| `env_file` | Path to the generated `.env` file | `.env` |
 
 ## Security Notes
 
-- Store your Phase access token as a GitHub secret
-- Never hardcode your access token in workflow files
-- The action uses secure methods to authenticate with Phase
+- Store your `PHASE_SERVICE_TOKEN` as a GitHub Secret.
+- Never hardcode secrets in workflow files.
+- The action securely fetches secrets using Phase CLI.
 
 ## How It Works
 
-1. The action installs the Phase CLI
-2. Authenticates with Phase using your access token
-3. Fetches your secrets from Phase
-4. Writes them to a `.env` file at the root of your repository
+1. The action installs the Phase CLI.
+2. Exports necessary environment variables for authentication.
+3. Fetches all secrets for the given application and environment.
+4. Writes them to a `.env` file.
 
 ## Requirements
 
@@ -80,16 +87,17 @@ jobs:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Feel free to submit a Pull Request.
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 👨Author
+## 👨 Author
 
 Anil Raj Rimal
 
 ## 🙏 Acknowledgements
 
-- [Phase](https://phase.dev) for providing the secrets management platform.
+- [Phase](https://phase.dev) for providing a robust secrets management platform.
+
