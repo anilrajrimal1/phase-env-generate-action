@@ -37,18 +37,14 @@ runs:
         echo "Installing Phase CLI..."
         curl -fsSL https://pkg.phase.dev/install.sh | sudo bash
 
-    - name: Set environment variables for Phase CLI
-      shell: bash
-      run: |
-        echo "Exporting Phase authentication variables..."
-        export PHASE_HOST=${{ inputs.phase_host }}
-        export PHASE_SERVICE_TOKEN=${{ inputs.phase_service_token }}
-
     - name: Fetch Secrets and Write to .env File
       shell: bash
       id: fetch
+      env:
+        PHASE_HOST: ${{ inputs.phase_host }}
+        PHASE_SERVICE_TOKEN: ${{ inputs.phase_service_token }}
       run: |
-        echo "Fetching ${{ inputs.phase_env }} secrets from Phase for APP with id: ${{ inputs.phase_app_id }}..."
+        echo "Fetching ${{ inputs.phase_env }} secrets from associated Phase for APP..."
         phase secrets export --app-id "${{ inputs.phase_app_id }}" --env "${{ inputs.phase_env }}" --format=dotenv ${{ inputs.secrets_to_fetch }} > "${{ inputs.output_file }}"
         echo "Secrets written to ${{ inputs.output_file }} successfully."
 
