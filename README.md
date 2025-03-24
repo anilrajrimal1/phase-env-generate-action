@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Fetch Phase Secrets and generate .env
-        uses: anilrajrimal1/phase-secrets-fetch-action@v1.0.2
+        uses: anilrajrimal1/phase-secrets-fetch-action@v1.0.4
         with:
           phase_service_token: ${{ secrets.PHASE_SERVICE_TOKEN }}
           phase_app_is: "your-phase-app-id"
