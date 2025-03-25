@@ -1,32 +1,32 @@
 name: "Fetch Phase Secrets"
-description: "Fetch secrets from Phase and write them to an .env file"
+description: "Fetches secrets from Phase and generates a .env file for workflows."
 author: "Anil Raj Rimal"
 
 inputs:
   phase_service_token:
-    description: "Phase Service Token used to authenticate with the Phase CLI"
+    description: "Service token for authenticating with the Phase CLI."
     required: true
   phase_app_id:
-    description: "Phase Application ID to fetch secrets from"
+    description: "Application ID to fetch secrets from in Phase."
     required: true
   phase_env:
-    description: "Phase Environment Name (e.g., develop, staging, master)"
+    description: "Environment name to fetch secrets for (e.g., develop, staging, master)."
     required: true
   phase_host:
-    description: "Phase Host URL (optional, only for self-hosted Phase instances)"
+    description: "Custom Phase host URL (optional, for self-hosted instances)."
     required: false
   output_file:
-    description: "Path to the output .env file"
+    description: "Path where the .env file will be written."
     required: false
     default: ".env"
   secrets_to_fetch:
-    description: "Space-separated list of specific secrets to fetch (optional; fetches all if not specified)"
+    description: "Space-separated list of specific secrets to fetch (optional; fetches all if unset)."
     required: false
 
 outputs:
   env_file:
-    description: "Path to the generated .env file"
-    value: ${{ steps.fetch.outputs.env_file }}
+    description: "Path to the generated .env file."
+    value: ${{ steps.fetch-secrets.outputs.env_file }}
 
 runs:
   using: "composite"
@@ -34,20 +34,46 @@ runs:
     - name: Install Phase CLI
       shell: bash
       run: |
-        echo "Installing Phase CLI..."
-        curl -fsSL https://pkg.phase.dev/install.sh | sudo bash
+        install_dir="$HOME/.local/bin"
+        mkdir -p "$install_dir"
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+          x86_64) arch="amd64" ;;
+          arm64|aarch64) arch="arm64" ;;
+          *) echo "Unsupported architecture: $arch"; exit 1 ;;
+        esac
+        case "$os" in
+          linux) deb_file="phase_cli_linux_${arch}_1.19.0.deb" ;;
+          darwin) deb_file="phase_cli_darwin_${arch}_1.19.0.deb" ;;
+          cygwin*|msys*|mingw*|win*) deb_file="phase_cli_windows_${arch}_1.19.0.deb" ;;
+          *) echo "Unsupported OS: $os"; exit 1 ;;
+        esac
+        curl -fsSL "https://github.com/phasehq/cli/releases/download/v1.19.0/$deb_file" -o "/tmp/$deb_file" || exit 1
+        ar x "/tmp/$deb_file" data.tar.gz || exit 1
+        mkdir -p /tmp/phase_extract
+        tar -xzf data.tar.gz -C /tmp/phase_extract ./usr/bin/phase ./usr/bin/_internal || exit 1
+        mv /tmp/phase_extract/usr/bin/phase "$install_dir/phase" || exit 1
+        mv /tmp/phase_extract/usr/bin/_internal "$install_dir/_internal" || exit 1
+        rm -rf /tmp/phase_extract /tmp/$deb_file data.tar.gz
+        [ "$os" != "cygwin" ] && [ "$os" != "msys" ] && [ "$os" != "mingw" ] && [ "$os" != "win" ] && chmod +x "$install_dir/phase" || exit 1
+        echo "$install_dir" >> "$GITHUB_PATH"
+        phase --version || exit 1
 
-    - name: Fetch Secrets and Write to .env File
+    - name: Fetch Secrets
+      id: fetch-secrets
       shell: bash
-      id: fetch
       env:
         PHASE_HOST: ${{ inputs.phase_host }}
         PHASE_SERVICE_TOKEN: ${{ inputs.phase_service_token }}
       run: |
-        echo "Fetching ${{ inputs.phase_env }} secrets from associated Phase for APP..."
-        phase secrets export --app-id "${{ inputs.phase_app_id }}" --env "${{ inputs.phase_env }}" --format=dotenv ${{ inputs.secrets_to_fetch }} > "${{ inputs.output_file }}"
-        echo "Secrets written to ${{ inputs.output_file }} successfully."
+        phase secrets export \
+          --app-id "${{ inputs.phase_app_id }}" \
+          --env "${{ inputs.phase_env }}" \
+          --format=dotenv \
+          ${{ inputs.secrets_to_fetch }} > "${{ inputs.output_file }}" || exit 1
+        echo "env_file=${{ inputs.output_file }}" >> "$GITHUB_OUTPUT"
 
 branding:
-  icon: "eye-off"
-  color: "black"
+  icon: "lock"
+  color: "gray-dark"
