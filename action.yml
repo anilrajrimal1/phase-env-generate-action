@@ -34,18 +34,22 @@ runs:
     - name: Install Phase CLI
       shell: bash
       run: |
-        install_dir="$HOME/.local/bin"
-        mkdir -p "$install_dir"
-        curl -fsSL "https://github.com/phasehq/cli/releases/download/v1.19.0/phase_cli_linux_amd64_1.19.0.deb" -o "/tmp/phase.deb" || exit 1
-        ar x "/tmp/phase.deb" data.tar.gz || exit 1
-        mkdir -p /tmp/phase_extract
-        tar -xzf data.tar.gz -C /tmp/phase_extract ./usr/bin/phase ./usr/bin/_internal || exit 1
-        mv /tmp/phase_extract/usr/bin/phase "$install_dir/phase" || exit 1
-        mv /tmp/phase_extract/usr/bin/_internal "$install_dir/_internal" || exit 1
-        rm -rf /tmp/phase_extract /tmp/phase.deb data.tar.gz
-        chmod +x "$install_dir/phase" || exit 1
-        echo "$install_dir" >> "$GITHUB_PATH"
-        phase --version || exit 1
+        if phase --version >/dev/null 2>&1; then
+          echo "Phase CLI already installed, skipping installation."
+        else
+          install_dir="$HOME/.local/bin"
+          mkdir -p "$install_dir"
+          curl -fsSL "https://github.com/phasehq/cli/releases/download/v1.19.0/phase_cli_linux_amd64_1.19.0.deb" -o "/tmp/phase.deb" || exit 1
+          ar x "/tmp/phase.deb" data.tar.gz || exit 1
+          mkdir -p /tmp/phase_extract
+          tar -xzf data.tar.gz -C /tmp/phase_extract ./usr/bin/phase ./usr/bin/_internal || exit 1
+          mv /tmp/phase_extract/usr/bin/phase "$install_dir/phase" || exit 1
+          mv /tmp/phase_extract/usr/bin/_internal "$install_dir/_internal" || exit 1
+          rm -rf /tmp/phase_extract /tmp/phase.deb data.tar.gz
+          chmod +x "$install_dir/phase" || exit 1
+          echo "$install_dir" >> "$GITHUB_PATH"
+          phase --version || exit 1
+        fi
 
     - name: Fetch Secrets
       id: fetch-secrets
