@@ -22,7 +22,9 @@ This action automates retrieving secrets from Phase and writing them to a `.env`
 
 - A [Phase](https://phase.dev) account with configured secrets or your own Self-Hosted one.
 - A Phase Service Token with appropriate permissions
-- Runner with Sudo permission for the user
+
+> [!NOTE]
+> Make sure you have Ubuntu-based self-hosted runner, This works on them only !
 
 ### Basic Example
 
@@ -40,11 +42,12 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Fetch Phase Secrets and generate .env
-        uses: anilrajrimal1/phase-secrets-fetch-action@v1.0.5
+        uses: anilrajrimal1/phase-secrets-fetch-action@v1.0.6
         with:
           phase_service_token: ${{ secrets.PHASE_SERVICE_TOKEN }}
           phase_app_id: "your-phase-app-id"
           phase_env: "your-env"
+          phase_host: "https://host.url.com" #Only if self-hosted, otherwise leave blank
       
       # Your .env file is now available for other steps
       - name: Run your application

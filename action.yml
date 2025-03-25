@@ -1,5 +1,5 @@
 name: "Fetch Phase Secrets"
-description: "Fetches secrets from Phase and generates a .env file for workflows."
+description: "Fetches secrets from Phase and generates a .env file on Ubuntu runners."
 author: "Anil Raj Rimal"
 
 inputs:
@@ -36,27 +36,14 @@ runs:
       run: |
         install_dir="$HOME/.local/bin"
         mkdir -p "$install_dir"
-        os=$(uname -s | tr '[:upper:]' '[:lower:]')
-        arch=$(uname -m)
-        case "$arch" in
-          x86_64) arch="amd64" ;;
-          arm64|aarch64) arch="arm64" ;;
-          *) echo "Unsupported architecture: $arch"; exit 1 ;;
-        esac
-        case "$os" in
-          linux) deb_file="phase_cli_linux_${arch}_1.19.0.deb" ;;
-          darwin) deb_file="phase_cli_darwin_${arch}_1.19.0.deb" ;;
-          cygwin*|msys*|mingw*|win*) deb_file="phase_cli_windows_${arch}_1.19.0.deb" ;;
-          *) echo "Unsupported OS: $os"; exit 1 ;;
-        esac
-        curl -fsSL "https://github.com/phasehq/cli/releases/download/v1.19.0/$deb_file" -o "/tmp/$deb_file" || exit 1
-        ar x "/tmp/$deb_file" data.tar.gz || exit 1
+        curl -fsSL "https://github.com/phasehq/cli/releases/download/v1.19.0/phase_cli_linux_amd64_1.19.0.deb" -o "/tmp/phase.deb" || exit 1
+        ar x "/tmp/phase.deb" data.tar.gz || exit 1
         mkdir -p /tmp/phase_extract
         tar -xzf data.tar.gz -C /tmp/phase_extract ./usr/bin/phase ./usr/bin/_internal || exit 1
         mv /tmp/phase_extract/usr/bin/phase "$install_dir/phase" || exit 1
         mv /tmp/phase_extract/usr/bin/_internal "$install_dir/_internal" || exit 1
-        rm -rf /tmp/phase_extract /tmp/$deb_file data.tar.gz
-        [ "$os" != "cygwin" ] && [ "$os" != "msys" ] && [ "$os" != "mingw" ] && [ "$os" != "win" ] && chmod +x "$install_dir/phase" || exit 1
+        rm -rf /tmp/phase_extract /tmp/phase.deb data.tar.gz
+        chmod +x "$install_dir/phase" || exit 1
         echo "$install_dir" >> "$GITHUB_PATH"
         phase --version || exit 1
 
